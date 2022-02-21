@@ -5,3 +5,6 @@
 binaries/
 images/
 scratch/
+firmwares/
+*.tar.gz
+ReFirmLabs-binwalk-fa0c0bd/

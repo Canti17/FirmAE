@@ -731,6 +731,8 @@ def main():
     arch = None
     endianness = None
     workDir = getWorkDir()
+    resultProcess = None
+    
     if not workDir:
         raise Exception("Can't find firmae.config file")
 
@@ -759,7 +761,8 @@ def main():
         outfile = """%s/%i/run.sh""" % (SCRATCHDIR, iid)
     if debug:
         print("processing %i" % iid)
-    process(iid, arch, endianness, makeQemuCmd, outfile)
+    resultProcess = process(iid, arch, endianness, makeQemuCmd, outfile)
+    print("RISULTATO PROCESS: ", resultProcess)
 
 if __name__ == "__main__":
     main()

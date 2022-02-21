@@ -127,6 +127,7 @@ function run_emulation()
     if [ ${OPTION} = "check" ] && [ -e ${WORK_DIR}/result ]; then
         if (egrep -sqi "true" ${WORK_DIR}/result); then
             RESULT=`cat ${WORK_DIR}/result`
+            echo -e "Image and Network already existing. Option -c is not needed."
             return
         fi
         rm ${WORK_DIR}/result
@@ -196,8 +197,8 @@ function run_emulation()
         # TIMEOUT is set in "firmae.config". This TIMEOUT is used for initial
         # log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
-          ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} \
-          &> ${WORK_DIR}/makeNetwork.log
+          ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} #\
+         # &> ${WORK_DIR}/makeNetwork.log
         ln -s ./run.sh ${WORK_DIR}/run_debug.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_analyze.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_boot.sh | true
