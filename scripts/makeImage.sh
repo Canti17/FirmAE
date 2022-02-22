@@ -3,6 +3,9 @@
 set -e
 set -u
 
+
+
+
 if [ -e ./firmae.config ]; then
     source ./firmae.config
 elif [ -e ../firmae.config ]; then
@@ -21,6 +24,27 @@ if check_root; then
     echo "Error: This script requires root privileges!"
     exit 1
 fi
+
+
+
+function BREAKPOINT() {
+  BREAKPOINT_NAME=$1
+  echo "Enter breakpoint $BREAKPOINT_NAME"
+  set +e
+  /bin/bash
+  BREAKPOINT_EXIT_CODE=$?
+  set -e
+  if [[ $BREAKPOINT_EXIT_CODE -eq 0 ]]; then
+    echo "Continue after breakpoint $BREAKPOINT_NAME"
+  else
+    echo "Terminate after breakpoint $BREAKPOINT_NAME"
+    exit $BREAKPOINT_EXIT_CODE
+  fi
+}
+
+
+
+export -f BREAKPOINT
 
 IID=${1}
 ARCH=${2}
@@ -97,6 +121,32 @@ if [ -e ${IMAGE_DIR}/firmadyne/service ]; then
   cp ${IMAGE_DIR}/firmadyne/service ${WORK_DIR}
 fi
 
+#canti17-patch-for OPENWRT-Netgear firmwares
+FILE_INIT=${IMAGE_DIR}/etc/inittab
+STR_INIT=/firmadyne/preInit.sh
+if test -f "$FILE_INIT"; then
+    line_boot=$(head -n 1 "${IMAGE_DIR}/etc/inittab")
+    while read -r line
+    do
+    echo ${line}
+    
+    if [[ ! "${line_boot}"  == *"${line}"* ]]; then
+        if [ ! "${STR_INIT}" == "${line}" ]; then
+            touch "${WORK_DIR}/init2";
+            grep -v "${line}" "${WORK_DIR}/init" > "${WORK_DIR}/init2"; 
+            
+            mv "${WORK_DIR}/init2" "${WORK_DIR}/init";
+            
+            #sed -i "\/${line}\/d" ${WORK_DIR}/init | cat -s  
+            echo ${line}
+        fi
+    fi
+    done < ${WORK_DIR}/init
+fi
+
+#For see the execution on a certain point we can break; Uncomment the next line to do it.
+#BREAKPOINT AfterPatch
+
 echo "----Patching Filesystem (chroot)----"
 cp "${SCRIPT_DIR}/fixImage.sh" "${IMAGE_DIR}"
 FIRMAE_BOOT=${FIRMAE_BOOT} FIRMAE_ETC=${FIRMAE_ETC} chroot "${IMAGE_DIR}" /busybox ash /fixImage.sh
@@ -133,6 +183,8 @@ if (! ${FIRMAE_ETC}); then
   sed -i 's@/firmadyne/sh@/bin/sh@g' ${IMAGE_DIR}/firmadyne/{preInit.sh,network.sh,run_service.sh}
   sed -i 's@BUSYBOX=/firmadyne/busybox@BUSYBOX=@g' ${IMAGE_DIR}/firmadyne/{preInit.sh,network.sh,run_service.sh}
 fi
+
+
 
 echo "----Unmounting QEMU Image----"
 sync

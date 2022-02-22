@@ -1,4 +1,4 @@
-#!/firmadyne/sh
+#!/firmadyne/sh -xv
 
 BUSYBOX=/firmadyne/busybox
 BINARY=`${BUSYBOX} cat /firmadyne/service`

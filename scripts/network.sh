@@ -1,4 +1,4 @@
-#!/firmadyne/sh
+#!/firmadyne/sh -xv
 
 BUSYBOX=/firmadyne/busybox
 ACTION=`${BUSYBOX} cat /firmadyne/network_type`
