@@ -144,8 +144,20 @@ if test -f "$FILE_INIT"; then
     done < ${WORK_DIR}/init
 fi
 
+
+
+#canti17-not-beautiful-fix-for-JNR-3210-firmware
+#The goal is to eliminate the last two lines from the init file #/bin/ps #/bin/sh
+read -r line_name < "${WORK_DIR}/name"
+echo $line_name
+if [ "$line_name" == "JNR3210-V1.1.0.30_1.0.2" ]; then
+  sed -i '$ d' "${IMAGE_DIR}/usr/etc/rcS"
+  sed -i '$ d' "${IMAGE_DIR}/usr/etc/rcS"
+fi
+
 #For see the execution on a certain point we can break; Uncomment the next line to do it.
 #BREAKPOINT AfterPatch
+
 
 echo "----Patching Filesystem (chroot)----"
 cp "${SCRIPT_DIR}/fixImage.sh" "${IMAGE_DIR}"
