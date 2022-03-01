@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pdb
 import sys
 import getopt
 import re
@@ -66,7 +67,7 @@ echo "%(NETWORK_TYPE)s" > ${WORK_DIR}/image/firmadyne/network_type
 echo "%(NET_BRIDGE)s" > ${WORK_DIR}/image/firmadyne/net_bridge
 echo "%(NET_INTERFACE)s" > ${WORK_DIR}/image/firmadyne/net_interface
 
-echo "#!/firmadyne/sh" > ${WORK_DIR}/image/firmadyne/debug.sh
+echo "#!/firmadyne/sh -xv" > ${WORK_DIR}/image/firmadyne/debug.sh
 if (echo ${RUN_MODE} | grep -q "debug"); then
     echo "while (true); do /firmadyne/busybox nc -lp 31337 -e /firmadyne/sh; done &" >> ${WORK_DIR}/image/firmadyne/debug.sh
     echo "/firmadyne/busybox telnetd -p 31338 -l /firmadyne/sh" >> ${WORK_DIR}/image/firmadyne/debug.sh
@@ -79,6 +80,13 @@ umount ${WORK_DIR}/image > /dev/null
 del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 
 %(START_NET)s
+
+
+echo ""
+echo "Kernel: ${KERNEL}...."
+echo "Root: ${QEMU_ROOTFS}..."
+echo "Machine: ${QEMU_MACHINE}..."
+echo ""
 
 echo -n "Starting emulation of firmware... "
 %(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
@@ -119,7 +127,8 @@ def stripTimestamps(data):
 
 def findMacChanges(data, endianness):
     lines = stripTimestamps(data)
-    candidates = filter(lambda l: l.startswith(b"ioctl_SIOCSIFHWADDR"), lines)
+    #For python 3x Filter Object needs to change in a list. 
+    candidates = list(filter(lambda l: l.startswith(b"ioctl_SIOCSIFHWADDR"), lines))
     if debug:
         print("Mac Changes %r" % candidates)
 
@@ -142,17 +151,23 @@ def findMacChanges(data, endianness):
 
 def findPorts(data, endianness):
     lines = stripTimestamps(data)
-    candidates = filter(lambda l: l.startswith(b"inet_bind"), lines) # logs for the inconfig process
+    #For python 3x Filter Object needs to change in a list. 
+    candidates = list(filter(lambda l: l.startswith(b"inet_bind"), lines)) # logs for the inconfig process
     result = []
     if endianness == "eb":
         fmt = ">I"
     elif endianness == "el":
         fmt = "<I"
-    prog = re.compile(b"^inet_bind\[[^\]]+\]: proto:SOCK_(DGRAM|STREAM), ip:port: 0x([0-9a-f]+):([0-9]+)")
+
+    
+    prog = re.compile(b"^inet_bind\[[^\]]+\]: proto:SOCK_(DGRAM|STREAM), port:0x([0-9a-f]+):([0-9]+)")
     portSet = {}
+    #pdb.set_trace()
     for c in candidates:
         g = prog.match(c)
         if g:
+            #too many values to unpack- to fix it
+            
             (proto, addr, port) = g.groups()
             proto = "tcp" if proto == b"STREAM" else "udp"
             addr = socket.inet_ntoa(struct.pack(fmt, int(addr, 16)))
@@ -165,9 +180,11 @@ def findPorts(data, endianness):
 # Get the netwokr interfaces in the router, except 127.0.0.1
 def findNonLoInterfaces(data, endianness):
     lines = stripTimestamps(data)
-    candidates = filter(lambda l: l.startswith(b"__inet_insert_ifa"), lines) # logs for the inconfig process
+    #For python 3x Filter Object needs to change in a list. 
+    candidates = list(filter(lambda l: l.startswith(b"__inet_insert_ifa"), lines)) # logs for the inconfig process
     if debug:
-        print("Candidate ifaces: %r" % candidates)
+        #print("Candidate ifaces: %r" % candidates)
+        print("")
     result = []
     if endianness == "eb":
         fmt = ">I"
@@ -187,7 +204,8 @@ def findNonLoInterfaces(data, endianness):
 def findIfacesForBridge(data, brif):
     lines = stripTimestamps(data)
     result = []
-    candidates = filter(lambda l: l.startswith(b"br_dev_ioctl") or l.startswith(b"br_add_if"), lines)
+    #For python 3x Filter Object needs to change in a list. 
+    candidates = list(filter(lambda l: l.startswith(b"br_dev_ioctl") or l.startswith(b"br_add_if"), lines))
     progs = [re.compile(p % brif.encode()) for p in [b"^br_dev_ioctl\[[^\]]+\]: br:%s dev:(.*)", b"^br_add_if\[[^\]]+\]: br:%s dev:(.*)"]]
     for c in candidates:
         for p in progs:
@@ -204,7 +222,8 @@ def findIfacesForBridge(data, brif):
 def findVlanInfoForDev(data, dev):
     lines = stripTimestamps(data)
     results = []
-    candidates = filter(lambda l: l.startswith(b"register_vlan_dev"), lines)
+    #For python 3x Filter Object needs to change in a list. 
+    candidates = list(filter(lambda l: l.startswith(b"register_vlan_dev"), lines))
     prog = re.compile(b"register_vlan_dev\[[^\]]+\]: dev:%s vlan_id:([0-9]+)" % dev.encode())
     for c in candidates:
         g = prog.match(c)
@@ -428,7 +447,7 @@ def getNetworkList(data, ifacesWithIps, macChanges):
         #find all interfaces that are bridged with that interface
         brifs = findIfacesForBridge(data, iwi[0])
         if debug:
-            print("brifs for %s %r" % (iwi[0], brifs))
+            print("Brifs for %s %r" % (iwi[0], brifs))
         for dev in brifs:
             #find vlan_ids for all interfaces in the bridge
             vlans = findVlanInfoForDev(data, dev)
@@ -456,7 +475,7 @@ def getNetworkList(data, ifacesWithIps, macChanges):
                 pruned_network.append(n)
             else:
                 if debug:
-                    print("duplicate ip address for interface: ", n)
+                    print("Duplicate ip address for interface: ", n)
         return pruned_network
 
 def readWithException(filePath):
@@ -482,6 +501,9 @@ def inferNetwork(iid, arch, endianness, init):
 
     loopFile = mountImage(targetDir)
 
+    
+    #pdb.set_trace()
+
     fileType = subprocess.check_output(["file", "-b", "%s/image/%s" % (targetDir, init)]).decode().strip()
     print("[*] Infer test: %s (%s)" % (init, fileType))
 
@@ -493,10 +515,12 @@ def inferNetwork(iid, arch, endianness, init):
         webService = open(targetDir + '/service').read().strip()
     else:
         webService = None
-    print("[*] web service: %s" % webService)
+    print("[*] Web service: %s" % webService)
+    #pdb.set_trace()
     targetFile = ''
     targetData = ''
     out = None
+    
     if not init.endswith('preInit.sh'): # rcS, preinit
         if fileType.find('ELF') == -1 and fileType.find("symbolic link") == -1: # maybe script
             targetFile = targetDir + '/image/' + init
@@ -530,7 +554,7 @@ def inferNetwork(iid, arch, endianness, init):
                                                     arch + endianness,
                                                     iid,
                                                     qemuInitValue)
-    cmd += " 2>&1 > /dev/null"
+    cmd += " 2>&1 > /dev/null"   #VEDIAMO QUESTE EMULAZIONI COSA DANNO
     os.system(cmd)
 
     loopFile = mountImage(targetDir)
@@ -539,6 +563,7 @@ def inferNetwork(iid, arch, endianness, init):
         os.system("{}/inferDefault.py {}".format(SCRIPTDIR, iid))
     umountImage(targetDir, loopFile)
 
+    #pdb.set_trace()
     data = open("%s/qemu.initial.serial.log" % targetDir, 'rb').read()
 
     ports = findPorts(data, endianness)
@@ -591,27 +616,27 @@ def checkNetwork(networkList):
             brNetworkList = [network for network in networkList if not network[0].endswith(".0.0.0") and not network[1].startswith("eth")]
             invalidBrNetworkList = [network for network in networkList if network[0].endswith(".0.0.0") and not network[1].startswith("eth")]
             if vlanNetworkList:
-                print("has vlan ethernet")
+                print("Firmware has vlan ethernet")
                 filterNetworkList = vlanNetworkList
                 result = "normal"
             elif ethNetworkList:
-                print("has ethernet")
+                print("Firmware has ethernet")
                 filterNetworkList = ethNetworkList
                 result = "normal"
             elif invalidEthNetworkList:
-                print("has ethernet and invalid IP")
+                print("Firmware has ethernet and invalid IP")
                 for (ip, dev, vlan, mac, brif) in invalidEthNetworkList:
                     filterNetworkList.append(('192.168.0.1', dev, vlan, mac, brif))
                 result = "reload"
             elif brNetworkList:
-                print("only has bridge interface")
+                print("Firmware only has bridge interface")
                 for (ip, dev, vlan, mac, brif) in brNetworkList:
                     if devList:
                         dev = devList.pop(0)
                         filterNetworkList.append((ip, dev, vlan, mac, brif))
                 result = "bridge"
             elif invalidBrNetworkList:
-                print("only has bridge interface and invalid IP")
+                print("Firmware only has bridge interface and invalid IP")
                 for (ip, dev, vlan, mac, brif) in invalidBrNetworkList:
                     if devList:
                         dev = devList.pop(0)
@@ -619,7 +644,7 @@ def checkNetwork(networkList):
                 result = "bridgereload"
 
         else:
-            print("[*] no network interface: bring up default network")
+            print("[*] No network interface: bring up default network")
             filterNetworkList.append(('192.168.0.1', 'eth0', None, None, "br0"))
             result = "default"
     else: # if checkVariable("FIRMAE_NET"):
@@ -638,13 +663,13 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
             out.write(init)
         qemuInitValue, networkList, targetFile, targetData, ports = inferNetwork(iid, arch, endianness, init)
 
-        print("[*] ports: %r" % ports)
+        print("[*] Ports: %r" % ports)
         # check network interfaces and add script in the file system
         # return the fixed network interface
-        print("[*] networkInfo: %r" % networkList)
+        print("[*] NetworkInfo: %r" % networkList)
         filterNetworkList, network_type = checkNetwork(networkList)
 
-        print("[*] filter network info: %r" % filterNetworkList)
+        print("[*] Filter network info: %r" % filterNetworkList)
 
         # filter ip
         # some firmware uses multiple network interfaces for one bridge
@@ -760,9 +785,10 @@ def main():
     if outfile and iid:
         outfile = """%s/%i/run.sh""" % (SCRATCHDIR, iid)
     if debug:
-        print("processing %i" % iid)
+        print("Processing %i" % iid)
+    #pdb.set_trace()
     resultProcess = process(iid, arch, endianness, makeQemuCmd, outfile)
-    print("RISULTATO PROCESS: ", resultProcess)
+    print("RESULT PROCESSING: ", resultProcess)
 
 if __name__ == "__main__":
     main()
