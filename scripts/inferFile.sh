@@ -52,15 +52,23 @@ fi
 
 ${BUSYBOX} echo '/firmadyne/preInit.sh' >> /firmadyne/init
 
+
+#canti17-adding-others-webServices-from-the-FIRMAE-ones
 if (${FIRMAE_ETC}); then
     if [ -e /etc/init.d/uhttpd ]; then
         echo -n "/etc/init.d/uhttpd start" > /firmadyne/service
+        echo -n "uhttpd" > /firmadyne/service_name
+    elif [ -e /etc/init.d/uhttpd.init ]; then
+        echo -n "/usr/sbin/uhttpd" > /firmadyne/service
         echo -n "uhttpd" > /firmadyne/service_name
     elif [ -e /usr/bin/httpd ]; then
         echo -n "/usr/bin/httpd" > /firmadyne/service
         echo -n "httpd" > /firmadyne/service_name
     elif [ -e /usr/sbin/httpd ]; then
         echo -n "/usr/sbin/httpd" > /firmadyne/service
+        echo -n "httpd" > /firmadyne/service_name
+    elif [ -e /sbin/httpd ]; then
+        echo -n "/sbin/httpd" > /firmadyne/service
         echo -n "httpd" > /firmadyne/service_name
     elif [ -e /bin/goahead ]; then
         echo -n "/bin/goahead" > /firmadyne/service
@@ -74,5 +82,20 @@ if (${FIRMAE_ETC}); then
     elif [ -e /usr/sbin/lighttpd ]; then # for Ubiquiti firmwares
         echo -n "/usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf" > /firmadyne/service
         echo -n "lighttpd" > /firmadyne/service_name
+    elif [ -e /usr/bin/lighttpd ]; then # for DLink Firmwares
+        echo -n "/usr/bin/lighttpd -f /etc/lighttpd/lighttpd.conf" > /firmadyne/service
+        echo -n "lighttpd" > /firmadyne/service_name
+    elif [ -e /sbin/lighttpd ]; then # for DLink Firmwares
+        echo -n "/sbin/lighttpd -f /etc/lighttpd.conf" > /firmadyne/service
+        echo -n "lighttpd" > /firmadyne/service_name
+    elif [ -e /sbin/jjhttpd ]; then # for DLink Firmwares
+        echo -n "/sbin/jjhttpd start" > /firmadyne/service
+        echo -n "jjhttpd" > /firmadyne/service_name
+    elif [ -e /usr/sbin/mini_httpd ]; then # for Many Firmwares
+        echo -n "/usr/sbin/mini_httpd start" > /firmadyne/service
+        echo -n "mini_httpd" > /firmadyne/service_name
+    elif [ -e /sbin/mini_httpd ]; then # for D-Link Firmwares
+        echo -n "/sbin/mini_httpd start" > /firmadyne/service
+        echo -n "mini_httpd" > /firmadyne/service_name
     fi
 fi

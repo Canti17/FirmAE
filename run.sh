@@ -135,11 +135,11 @@ function run_emulation()
 
     if [ ! -e ./images/$IID.tar.gz ]; then
         echo -e "[\033[31m-\033[0m] Extracting root filesystem failed!"
-        echo "extraction fail" > ${WORK_DIR}/result
+        echo "Extraction fail" > ${WORK_DIR}/result
         return
     fi
 
-    echo "[*] extract done!!!"
+    echo "[*] Extract done!!!"
     t_end="$(date -u +%s.%N)"
     time_extract="$(bc <<<"$t_end-$t_start")"
     echo $time_extract > ${WORK_DIR}/time_extract
@@ -157,16 +157,17 @@ function run_emulation()
 
     if [ ! "${ARCH}" ]; then
         echo -e "[\033[31m-\033[0m] Get architecture failed!"
-        echo "get architecture fail" > ${WORK_DIR}/result
+        echo "Get architecture fail" > ${WORK_DIR}/result
         return
     fi
     if ( check_arch ${ARCH} == 0 ); then
         echo -e "[\033[31m-\033[0m] Unknown architecture! - ${ARCH}"
-        echo "not valid architecture : ${ARCH}" > ${WORK_DIR}/result
+        echo "Not valid architecture : ${ARCH}" > ${WORK_DIR}/result
         return
     fi
 
-    echo "[*] get architecture done!!!"
+    echo "[*] Get architecture done!!!"
+    echo -e "Architecture: ${ARCH}"
     t_end="$(date -u +%s.%N)"
     time_arch="$(bc <<<"$t_end-$t_start")"
     echo $time_arch > ${WORK_DIR}/time_arch
@@ -193,11 +194,11 @@ function run_emulation()
         # infer network interface
         # ================================
         t_start="$(date -u +%s.%N)"
-        echo "[*] infer network start!!!"
+        echo "[*] Infer network start!!!"
         # TIMEOUT is set in "firmae.config". This TIMEOUT is used for initial
         # log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
-          ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} #\
+          ./scripts/makeNetwork.py -i $IID -d -q -o -a ${ARCH} #\
          # &> ${WORK_DIR}/makeNetwork.log
         ln -s ./run.sh ${WORK_DIR}/run_debug.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_analyze.sh | true
@@ -228,6 +229,8 @@ function run_emulation()
     else
         echo false > ${WORK_DIR}/result
     fi
+
+
 
     if [ ${OPTION} = "analyze" ]; then
         # ================================
