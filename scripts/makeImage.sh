@@ -121,7 +121,7 @@ if [ -e ${IMAGE_DIR}/firmadyne/service ]; then
   cp ${IMAGE_DIR}/firmadyne/service ${WORK_DIR}
 fi
 
-#canti17-patch-for OPENWRT-Netgear firmwares
+#canti17-fix-for-some-OPENWRT-firmwares
 FILE_INIT=${IMAGE_DIR}/etc/inittab
 STR_INIT=/firmadyne/preInit.sh
 if test -f "$FILE_INIT"; then
@@ -129,16 +129,12 @@ if test -f "$FILE_INIT"; then
     while read -r line
     do
     echo ${line}
-    
     if [[ ! "${line_boot}"  == *"${line}"* ]]; then
         if [ ! "${STR_INIT}" == "${line}" ]; then
             touch "${WORK_DIR}/init2";
             grep -v "${line}" "${WORK_DIR}/init" > "${WORK_DIR}/init2"; 
             
             mv "${WORK_DIR}/init2" "${WORK_DIR}/init";
-            
-            #sed -i "\/${line}\/d" ${WORK_DIR}/init | cat -s  
-            echo ${line}
         fi
     fi
     done < ${WORK_DIR}/init
@@ -153,6 +149,22 @@ echo $line_name
 if [ "$line_name" == "JNR3210-V1.1.0.30_1.0.2" ]; then
   sed -i '$ d' "${IMAGE_DIR}/usr/etc/rcS"
   sed -i '$ d' "${IMAGE_DIR}/usr/etc/rcS"
+fi
+
+
+
+#canti17-fix-for-Firmwares-that-does-not-recognize-init-but-actually-have-it
+if grep "rcS" "${WORK_DIR}/init";then
+  echo ""  
+else
+  while read -r line
+    do
+    if [[ "${line}" ==  *"rcS" ]]; then
+      myString="${line:1}"
+      sed -i '1i\'"$myString" "${WORK_DIR}/init"  
+    fi
+  done < ${WORK_DIR}/fileList
+  
 fi
 
 #For see the execution on a certain point we can break; Uncomment the next line to do it.
