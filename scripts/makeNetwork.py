@@ -159,17 +159,16 @@ def findPorts(data, endianness):
     elif endianness == "el":
         fmt = "<I"
 
-    #canti17-fix-regular-expression     
-    #EXAMPLE--> inet_bind[PID: 323 (httpd)]: proto:SOCK_STREAM, port:49152    
-    #CORRETTO#prog = re.compile(b"^inet_bind\[[^\]]+\]: proto:SOCK_(DGRAM|STREAM), port:(0x([0-9a-f]+):([0-9]+)|[0-9]+)")
-    prog = re.compile(b"^inet_bind\[[^\]]+\]: proto:SOCK_(DGRAM|STREAM), port:0x([0-9a-f]+):([0-9]+)")
+    #canti17-fix-regular-expression						
+    #EXAMPLE--> inet_bind[PID: 323 (httpd)]: proto:SOCK_STREAM, port:49152	
+    prog = re.compile(b"^inet_bind\[[^\]]+\]: proto:SOCK_(DGRAM|STREAM), ip:port: 0x([0-9a-f]+):([0-9]+)")					
+    prog2 = re.compile(b"^inet_bind\[[^\]]+\]: proto:SOCK_(DGRAM|STREAM), port:([0-9]+)")
     portSet = {}
     #pdb.set_trace()
     for c in candidates:
         g = prog.match(c)
+        p = prog2.match(c)
         if g:
-            #too many values to unpack- to fix it
-            
             (proto, addr, port) = g.groups()
             proto = "tcp" if proto == b"STREAM" else "udp"
             addr = socket.inet_ntoa(struct.pack(fmt, int(addr, 16)))
@@ -177,6 +176,14 @@ def findPorts(data, endianness):
             if port not in portSet:
                 result.append((proto, addr, port))
                 portSet[port] = True
+        elif p:
+            (proto, port) = p.groups()
+            proto = "tcp" if proto == b"STREAM" else "udp"
+            port = int(port.decode())
+            if port not in portSet:
+                result.append((proto, port))
+                portSet[port] = True
+
     return result
 
 # Get the netwokr interfaces in the router, except 127.0.0.1
@@ -264,7 +271,7 @@ def qemuArchNetworkConfig(i, tap_num, arch, n, isUserNetwork, ports):
             #portfwd = ",hostfwd=udp::67-:67"
             #portfwd += ",hostfwd=udp::68-:68" # icmp port cannot foward
             portfwd = "hostfwd=tcp::80-:80,hostfwd=tcp::443-:443,"
-            for (proto, ip, port) in ports:
+            for (proto, port) in ports:  #gives error in case of (proto, ip , port) structure
                 if port in [80, 443]:
                     continue
                 portfwd += "hostfwd=%(TYPE)s::%(PORT)i-:%(PORT)i," % {"TYPE" : proto, "PORT" : port}
