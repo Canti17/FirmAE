@@ -74,7 +74,7 @@ if (echo ${RUN_MODE} | grep -q "debug"); then
 fi
 chmod a+x ${WORK_DIR}/image/firmadyne/debug.sh
 
-sleep 1
+sleep 3
 sync
 umount ${WORK_DIR}/image > /dev/null
 del_partition ${DEVICE:0:$((${#DEVICE}-2))}
@@ -159,7 +159,9 @@ def findPorts(data, endianness):
     elif endianness == "el":
         fmt = "<I"
 
-    
+    #canti17-fix-regular-expression     
+    #EXAMPLE--> inet_bind[PID: 323 (httpd)]: proto:SOCK_STREAM, port:49152    
+    #CORRETTO#prog = re.compile(b"^inet_bind\[[^\]]+\]: proto:SOCK_(DGRAM|STREAM), port:(0x([0-9a-f]+):([0-9]+)|[0-9]+)")
     prog = re.compile(b"^inet_bind\[[^\]]+\]: proto:SOCK_(DGRAM|STREAM), port:0x([0-9a-f]+):([0-9]+)")
     portSet = {}
     #pdb.set_trace()
@@ -502,7 +504,7 @@ def inferNetwork(iid, arch, endianness, init):
     loopFile = mountImage(targetDir)
 
     
-    #pdb.set_trace()
+    
 
     fileType = subprocess.check_output(["file", "-b", "%s/image/%s" % (targetDir, init)]).decode().strip()
     print("[*] Infer test: %s (%s)" % (init, fileType))
@@ -544,6 +546,8 @@ def inferNetwork(iid, arch, endianness, init):
         # trendnet TEW-828DRU_1.0.7.2, etc...
         out.write('/firmadyne/busybox sleep 36000\n')
         out.close()
+
+    #pdb.set_trace()
 
     umountImage(targetDir, loopFile)
 
