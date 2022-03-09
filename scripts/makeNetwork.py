@@ -22,6 +22,7 @@ set -u
 
 ARCHEND=%(ARCHEND)s
 IID=%(IID)i
+IOTAFL=%(IOTAFL)i
 
 if [ -e ./firmae.config ]; then
     source ./firmae.config
@@ -81,6 +82,15 @@ del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 
 %(START_NET)s
 
+if [ ${IOTAFL} -eq 0 ]; then
+    QEMU="./${QEMU}"
+    IMAGE=./image.raw
+    MEM_PART="-mem-prealloc -mem-path ./mem_file"
+    cd scratch/${IID}/
+    
+else
+    MEM_PART=""
+fi
 
 echo ""
 echo "Kernel: ${KERNEL}...."
@@ -88,15 +98,16 @@ echo "Root: ${QEMU_ROOTFS}..."
 echo "Machine: ${QEMU_MACHINE}..."
 echo ""
 
+sleep 1
+
 echo -n "Starting emulation of firmware... "
-%(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
+%(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 ${MEM_PART} -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
     %(QEMU_DISK)s -append "root=${QEMU_ROOTFS} console=ttyS0 nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug ignore_loglevel print-fatal-signals=1 FIRMAE_NET=${FIRMAE_NET} FIRMAE_NVRAM=${FIRMAE_NVRAM} FIRMAE_KERNEL=${FIRMAE_KERNEL} FIRMAE_ETC=${FIRMAE_ETC} ${QEMU_DEBUG}" \\
     -serial file:${WORK_DIR}/qemu.final.serial.log \\
     -serial unix:/tmp/qemu.${IID}.S1,server,nowait \\
     -monitor unix:/tmp/qemu.${IID},server,nowait \\
     -display none \\
-    %(QEMU_NETWORK)s | true
-
+    %(QEMU_NETWORK)s
 %(STOP_NET)s
 
 echo "Done!"
@@ -149,7 +160,7 @@ def findMacChanges(data, endianness):
             result.append((iface, mac))
     return result
 
-def findPorts(data, endianness):
+def findPorts(data, endianness): #However the Ports later are used only for DHCP firmwares and not other scopes
     lines = stripTimestamps(data)
     #For python 3x Filter Object needs to change in a list. 
     candidates = list(filter(lambda l: l.startswith(b"inet_bind"), lines)) # logs for the inconfig process
@@ -429,12 +440,23 @@ def qemuCmd(iid, network, ports, network_type, arch, endianness, qemuInitValue, 
     else:
         raise Exception("Unsupported architecture")
 
+    #pdb.set_trace()
+    #canti17-change-for-fuzzing-project
+    #######--Am I in IOT-AFL execution or in a Firm-AE one?--########
+    file_path_FirmAE = os.path.realpath(__file__)
+    print("PATH FIRMAE:  "+file_path_FirmAE)
+    if 'IOT-AFL' in file_path_FirmAE:
+        iotAfl = 0
+    else:
+        iotAfl = 1
+
     for (ip, dev, vlan, mac, brif) in network:
         network_bridge = brif
         network_iface = dev
         break
 
     return QEMUCMDTEMPLATE % {'IID': iid,
+                              'IOTAFL' : iotAfl,
                               'NETWORK_TYPE' : network_type,
                               'NET_BRIDGE' : network_bridge,
                               'NET_INTERFACE' : network_iface,

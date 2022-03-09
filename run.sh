@@ -190,6 +190,23 @@ function run_emulation()
         time_image="$(bc <<<"$t_end-$t_start")"
         echo $time_image > ${WORK_DIR}/time_image
 
+
+        #canti17-change-for-fuzzing-project
+        # ==============================================
+        # If it is a IOT-AFL execution - Setup Fuzzing
+        # ==============================================
+        t_start="$(date -u +%s.%N)"
+        directory_you_want_to_check="IOT-AFL"
+        PATHTESTING=$(pwd)
+        if [[ $PATHTESTING == *"$directory_you_want_to_check"* ]] ; then
+            cd ..
+            ./IOTAFLsetup.py $IID $ARCH
+            cd FirmAE
+        fi
+        t_end="$(date -u +%s.%N)"
+        time_image="$(bc <<<"$t_end-$t_start")"
+
+
         # ================================
         # infer network interface
         # ================================
