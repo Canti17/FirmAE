@@ -21,8 +21,10 @@ IID=${1}
 WORK_DIR=`get_scratch ${IID}`
 ARCH=${2}
 
-echo "[*] test emulator"
+echo -e "\033[33m[*]\033[0m Starting a test emulation with the new INFO:"
 ${WORK_DIR}/run.sh 2>&1 >${WORK_DIR}/emulation.log &
+#${WORK_DIR}/run.sh & #2>&1 >${WORK_DIR}/emulation.log &
+
 
 sleep 10
 
@@ -40,7 +42,7 @@ else
   done
 fi
 
-echo -e "[*] Waiting web service... from ${IPS[@]}"
+echo -e "\033[33m[*]\033[0m Waiting web service... from ${IPS[@]}"
 read IP PING_RESULT WEB_RESULT TIME_PING TIME_WEB < <(check_network "${IPS[@]}" false)
 
 if (${PING_RESULT}); then

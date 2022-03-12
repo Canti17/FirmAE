@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
-set -x
 
 # Start database
 sudo service postgresql restart
-echo "Waiting for DB to start..."
-sleep 5
+echo -e "\033[32m[*]\033[0m Waiting for DB to restart..."
+sleep 3

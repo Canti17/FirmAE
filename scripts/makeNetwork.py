@@ -92,6 +92,8 @@ else
     MEM_PART=""
 fi
 
+PATHNEEDED=$(pwd)
+echo "$PATHNEEDED"
 echo ""
 echo "Kernel: ${KERNEL}...."
 echo "Root: ${QEMU_ROOTFS}..."
@@ -141,7 +143,7 @@ def findMacChanges(data, endianness):
     #For python 3x Filter Object needs to change in a list. 
     candidates = list(filter(lambda l: l.startswith(b"ioctl_SIOCSIFHWADDR"), lines))
     if debug:
-        print("Mac Changes %r" % candidates)
+        print("\033[32m[+]\033[0m Mac Changes %r" % candidates)
 
     result = []
     if endianness == "eb":
@@ -160,7 +162,7 @@ def findMacChanges(data, endianness):
             result.append((iface, mac))
     return result
 
-def findPorts(data, endianness): #However the Ports later are used only for DHCP firmwares and not other scopes
+def findPorts(data, endianness): #Howewer the Ports later are used only for DHCP firmwares and not other scopes
     lines = stripTimestamps(data)
     #For python 3x Filter Object needs to change in a list. 
     candidates = list(filter(lambda l: l.startswith(b"inet_bind"), lines)) # logs for the inconfig process
@@ -314,7 +316,7 @@ def qemuNetworkConfig(arch, network, isUserNetwork, ports):
     for j, n in enumerate(network[:interfaceNum]):
         if n not in assigned:
             # guess assignment
-            print("Warning: Unmatched interface: %s" % (n,))
+            print("\033[33m[!]\033[0m Warning: Unmatched interface: %s" % (n,))
             output[j] = qemuArchNetworkConfig(j, j, arch, n, isUserNetwork, ports)
             assigned.append(n)
 
@@ -444,7 +446,6 @@ def qemuCmd(iid, network, ports, network_type, arch, endianness, qemuInitValue, 
     #canti17-change-for-fuzzing-project
     #######--Am I in IOT-AFL execution or in a Firm-AE one?--########
     file_path_FirmAE = os.path.realpath(__file__)
-    print("PATH FIRMAE:  "+file_path_FirmAE)
     if 'IOT-AFL' in file_path_FirmAE:
         iotAfl = 0
     else:
@@ -478,7 +479,7 @@ def getNetworkList(data, ifacesWithIps, macChanges):
         #find all interfaces that are bridged with that interface
         brifs = findIfacesForBridge(data, iwi[0])
         if debug:
-            print("Brifs for %s %r" % (iwi[0], brifs))
+            print("\033[32m[+]\033[0m Brifs for %s %r" % (iwi[0], brifs))
         for dev in brifs:
             #find vlan_ids for all interfaces in the bridge
             vlans = findVlanInfoForDev(data, dev)
@@ -506,7 +507,7 @@ def getNetworkList(data, ifacesWithIps, macChanges):
                 pruned_network.append(n)
             else:
                 if debug:
-                    print("Duplicate ip address for interface: ", n)
+                    print("\033[33m[!]\033[0m Duplicate ip address for interface: ", n)
         return pruned_network
 
 def readWithException(filePath):
@@ -536,7 +537,7 @@ def inferNetwork(iid, arch, endianness, init):
     
 
     fileType = subprocess.check_output(["file", "-b", "%s/image/%s" % (targetDir, init)]).decode().strip()
-    print("[*] Infer test: %s (%s)" % (init, fileType))
+    print("\033[33m[*]\033[0m Testing Init: %s (%s)" % (init, fileType))
 
     with open(targetDir + '/image/firmadyne/network_type', 'w') as out:
         out.write("None")
@@ -546,7 +547,8 @@ def inferNetwork(iid, arch, endianness, init):
         webService = open(targetDir + '/service').read().strip()
     else:
         webService = None
-    print("[*] Web service: %s" % webService)
+    print("\033[33m[*]\033[0m Web service: %s" % webService)
+    print("")
     #pdb.set_trace()
     targetFile = ''
     targetData = ''
@@ -580,7 +582,8 @@ def inferNetwork(iid, arch, endianness, init):
 
     umountImage(targetDir, loopFile)
 
-    print("Running firmware %d: terminating after %d secs..." % (iid, TIMEOUT))
+    print("\033[33m[Info]\033[0m Now we are doing a first emulation to retrieve all possible informations from the firmware")
+    print("\033[33m[*]\033[0m Running firmware with ID=%d: terminating after %d secs..." % (iid, TIMEOUT))
 
     cmd = "timeout --preserve-status --signal SIGINT {0} ".format(TIMEOUT)
     cmd += "{0}/run.{1}.sh \"{2}\" \"{3}\" ".format(SCRIPTDIR,
@@ -592,7 +595,7 @@ def inferNetwork(iid, arch, endianness, init):
 
     loopFile = mountImage(targetDir)
     if not os.path.exists(targetDir + '/image/firmadyne/nvram_files'):
-        print("Infer NVRAM default file!\n")
+        print("\033[33m[*]\033[0m Creating NVRAM default file!\n")
         os.system("{}/inferDefault.py {}".format(SCRIPTDIR, iid))
     umountImage(targetDir, loopFile)
 
@@ -605,7 +608,7 @@ def inferNetwork(iid, arch, endianness, init):
     ifacesWithIps = findNonLoInterfaces(data, endianness)
     #find changes of mac addresses for devices
     macChanges = findMacChanges(data, endianness)
-    print('[*] Interfaces: %r' % ifacesWithIps)
+    print('\033[32m[+]\033[0m Interfaces: %r' % ifacesWithIps)
 
     networkList = getNetworkList(data, ifacesWithIps, macChanges)
     return qemuInitValue, networkList, targetFile, targetData, ports
@@ -629,7 +632,7 @@ def checkNetwork(networkList):
         if (len(devs) > 1 and
             any([dev.startswith('eth') for dev in devs]) and
             any([not dev.startswith('eth') for dev in devs])):
-            print("[*] Check router")
+            print("\033[33m[*]\033[0m Check router")
             # remove dhcp ip address
             networkList = [network for network in networkList if not network[1].startswith("eth")]
         # linksys FW_LAPAC1200_LAPAC1750_1.1.03.000
@@ -637,7 +640,7 @@ def checkNetwork(networkList):
         elif (len(ips) > 1 and
               any([ip.startswith("10.0.2.") for ip in ips]) and
               any([not ip.startswith("10.0.2.") for ip in ips])):
-            print("[*] Check router")
+            print("\033[33m[*]\033[0m Check router")
             # remove dhcp ip address
             networkList = [network for network in networkList if not network[0].startswith("10.0.2.")]
 
@@ -649,27 +652,27 @@ def checkNetwork(networkList):
             brNetworkList = [network for network in networkList if not network[0].endswith(".0.0.0") and not network[1].startswith("eth")]
             invalidBrNetworkList = [network for network in networkList if network[0].endswith(".0.0.0") and not network[1].startswith("eth")]
             if vlanNetworkList:
-                print("Firmware has vlan ethernet")
+                print("\033[32m[!]\033[0m Firmware has vlan ethernet")
                 filterNetworkList = vlanNetworkList
                 result = "normal"
             elif ethNetworkList:
-                print("Firmware has ethernet")
+                print("\033[32m[!]\033[0m Firmware has ethernet")
                 filterNetworkList = ethNetworkList
                 result = "normal"
             elif invalidEthNetworkList:
-                print("Firmware has ethernet and invalid IP")
+                print("\033[33m[!]\033[0m Firmware has ethernet and invalid IP")
                 for (ip, dev, vlan, mac, brif) in invalidEthNetworkList:
                     filterNetworkList.append(('192.168.0.1', dev, vlan, mac, brif))
                 result = "reload"
             elif brNetworkList:
-                print("Firmware only has bridge interface")
+                print("\033[33m[!]\033[0m Firmware only has bridge interface")
                 for (ip, dev, vlan, mac, brif) in brNetworkList:
                     if devList:
                         dev = devList.pop(0)
                         filterNetworkList.append((ip, dev, vlan, mac, brif))
                 result = "bridge"
             elif invalidBrNetworkList:
-                print("Firmware only has bridge interface and invalid IP")
+                print("\033[33m[!]\033[0m Firmware only has bridge interface and invalid IP")
                 for (ip, dev, vlan, mac, brif) in invalidBrNetworkList:
                     if devList:
                         dev = devList.pop(0)
@@ -677,7 +680,7 @@ def checkNetwork(networkList):
                 result = "bridgereload"
 
         else:
-            print("[*] No network interface: bring up default network")
+            print("\033[33m[!]\033[0m No network interface: bring up default network")
             filterNetworkList.append(('192.168.0.1', 'eth0', None, None, "br0"))
             result = "default"
     else: # if checkVariable("FIRMAE_NET"):
@@ -696,13 +699,13 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
             out.write(init)
         qemuInitValue, networkList, targetFile, targetData, ports = inferNetwork(iid, arch, endianness, init)
 
-        print("[*] Ports: %r" % ports)
+        print("\033[32m[+]\033[0m Ports: %r" % ports)
         # check network interfaces and add script in the file system
         # return the fixed network interface
-        print("[*] NetworkInfo: %r" % networkList)
+        print("\033[32m[+]\033[0m NetworkInfo: %r" % networkList)
         filterNetworkList, network_type = checkNetwork(networkList)
 
-        print("[*] Filter network info: %r" % filterNetworkList)
+        print("\033[32m[+]\033[0m Filter network info: %r" % filterNetworkList)
 
         # filter ip
         # some firmware uses multiple network interfaces for one bridge
@@ -818,10 +821,10 @@ def main():
     if outfile and iid:
         outfile = """%s/%i/run.sh""" % (SCRATCHDIR, iid)
     if debug:
-        print("Processing %i" % iid)
+        print("\033[33m[*]\033[0m Processing Firmware with ID=%i" % iid)
     #pdb.set_trace()
     resultProcess = process(iid, arch, endianness, makeQemuCmd, outfile)
-    print("RESULT PROCESSING: ", resultProcess)
+    print("Result Processing: ", resultProcess)
 
 if __name__ == "__main__":
     main()
