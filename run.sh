@@ -64,7 +64,7 @@ if [ ${OPTION} == "none" ]; then
 fi
 
 if (! id | egrep -sqi "root"); then
-  echo -e "[\033[31m-\033[0m] This script must run with 'root' privilege"
+  echo -e "\033[31m[-]\033[0m This script must run with 'root' privilege"
   exit 1
 fi
 
@@ -74,7 +74,7 @@ IID=-1
 
 function run_emulation()
 {
-    echo "[*] ${1} emulation start!!!"
+    echo -e "\033[33m[*]\033[0m ${1} emulation start!!!"
     INFILE=${1}
     BRAND=`get_brand ${INFILE} ${BRAND}`
     FILENAME=`basename ${INFILE%.*}`
@@ -83,13 +83,13 @@ function run_emulation()
     IP=''
 
     if [ ${BRAND} = "auto" ]; then
-      echo -e "[\033[31m-\033[0m] Invalid brand ${INFILE}"
+      echo -e "\033[31m[-]\033[0m Invalid brand ${INFILE}"
       return
     fi
 
     if [ -n "${FIRMAE_DOCKER-}" ]; then
       if ( ! ./scripts/util.py check_connection _ $PSQL_IP ); then
-        echo -e "[\033[31m-\033[0m] docker container failed to connect to the hosts' postgresql!"
+        echo -e "\033[31m[-]\033[0m docker container failed to connect to the hosts' postgresql!"
         return
       fi
     fi
@@ -104,7 +104,7 @@ function run_emulation()
 
     IID=`./scripts/util.py get_iid $INFILE $PSQL_IP`
     if [ ! "${IID}" ]; then
-        echo -e "[\033[31m-\033[0m] extractor.py failed!"
+        echo -e "\033[31m[-]\033[0m extractor.py failed!"
         return
     fi
 
@@ -127,19 +127,19 @@ function run_emulation()
     if [ ${OPTION} = "check" ] && [ -e ${WORK_DIR}/result ]; then
         if (egrep -sqi "true" ${WORK_DIR}/result); then
             RESULT=`cat ${WORK_DIR}/result`
-            echo -e "Image and Network already existing. Option -c is not needed."
+            echo -e "\033[33m[!]\033[0m Image and Network already existing. Option -c is not needed."
             return
         fi
         rm ${WORK_DIR}/result
     fi
 
     if [ ! -e ./images/$IID.tar.gz ]; then
-        echo -e "[\033[31m-\033[0m] Extracting root filesystem failed!"
+        echo -e "\033[31m[-]\033[0m Extracting root filesystem failed!"
         echo "Extraction fail" > ${WORK_DIR}/result
         return
     fi
 
-    echo "[*] Extract done!!!"
+    echo -e "\033[32m[+]\033[0m Extract done!!!"
     t_end="$(date -u +%s.%N)"
     time_extract="$(bc <<<"$t_end-$t_start")"
     echo $time_extract > ${WORK_DIR}/time_extract
@@ -156,18 +156,18 @@ function run_emulation()
     fi
 
     if [ ! "${ARCH}" ]; then
-        echo -e "[\033[31m-\033[0m] Get architecture failed!"
+        echo -e "\033[31m[-]\033[0m Get architecture failed!"
         echo "Get architecture fail" > ${WORK_DIR}/result
         return
     fi
     if ( check_arch ${ARCH} == 0 ); then
-        echo -e "[\033[31m-\033[0m] Unknown architecture! - ${ARCH}"
+        echo -e "\033[31m[-]\033[0m Unknown architecture! - ${ARCH}"
         echo "Not valid architecture : ${ARCH}" > ${WORK_DIR}/result
         return
     fi
 
-    echo "[*] Get architecture done!!!"
-    echo -e "Architecture: ${ARCH}"
+    echo -e "\033[32m[+]\033[0m Get architecture done!!!"
+    echo -e "\033[32m[+]\033[0m Architecture: ${ARCH}"
     t_end="$(date -u +%s.%N)"
     time_arch="$(bc <<<"$t_end-$t_start")"
     echo $time_arch > ${WORK_DIR}/time_arch
@@ -191,7 +191,7 @@ function run_emulation()
         echo $time_image > ${WORK_DIR}/time_image
 
 
-        #canti17-change-for-fuzzing-project
+        #canti17-change-fuzzing-project
         # ==============================================
         # If it is a IOT-AFL execution - Setup Fuzzing
         # ==============================================
@@ -211,7 +211,8 @@ function run_emulation()
         # infer network interface
         # ================================
         t_start="$(date -u +%s.%N)"
-        echo "[*] Infer network start!!!"
+        echo ""
+        echo -e "\033[33m[*]\033[0m Infer network start!!!"
         # TIMEOUT is set in "firmae.config". This TIMEOUT is used for initial
         # log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
@@ -225,7 +226,7 @@ function run_emulation()
         time_network="$(bc <<<"$t_end-$t_start")"
         echo $time_network > ${WORK_DIR}/time_network
     else
-        echo "[*] ${INFILE} already succeed emulation!!!"
+        echo "\033[32m[+]\033[0m ${INFILE} already succeed emulation!!!\n"
     fi
 
     if (egrep -sqi "true" ${WORK_DIR}/ping); then
@@ -236,12 +237,12 @@ function run_emulation()
         WEB_RESULT=true
     fi
 
-    echo -e "\n[IID] ${IID}\n[\033[33mMODE\033[0m] ${OPTION}"
+    echo -e "\n[IID] ${IID}\n \033[33m[MODE]\033[0m ${OPTION}"
     if ($PING_RESULT); then
-        echo -e "[\033[32m+\033[0m] Network reachable on ${IP}!"
+        echo -e "\033[32m[+]\033[0m Network reachable on ${IP}!"
     fi
     if ($WEB_RESULT); then
-        echo -e "[\033[32m+\033[0m] Web service on ${IP}"
+        echo -e "\033[32m[+]\033[0m Web service on ${IP}"
         echo true > ${WORK_DIR}/result
     else
         echo false > ${WORK_DIR}/result
@@ -260,7 +261,7 @@ function run_emulation()
             IP=`cat ${WORK_DIR}/ip`
             check_network ${IP} false
 
-            echo -e "[\033[32m+\033[0m] start pentest!"
+            echo -e "\033[32m[+]\033[0m start pentest!"
             cd analyses
             ./analyses_all.sh $IID $BRAND $IP $PSQL_IP
             cd -
@@ -269,7 +270,7 @@ function run_emulation()
             kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> /dev/null
             sleep 2
         else
-            echo -e "[\033[31m-\033[0m] Web unreachable"
+            echo -e "\033[31m[-]\033[0m Web unreachable"
         fi
         t_end="$(date -u +%s.%N)"
         time_analyze="$(bc <<<"$t_end-$t_start")"
@@ -280,7 +281,7 @@ function run_emulation()
         # run debug mode.
         # ================================
         if ($PING_RESULT); then
-            echo -e "[\033[32m+\033[0m] Run debug!"
+            echo -e "\033[32m[+]\033[0m Run debug!"
             IP=`cat ${WORK_DIR}/ip`
             ./scratch/$IID/run_debug.sh &
             check_network ${IP} true
@@ -292,7 +293,7 @@ function run_emulation()
             kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> /dev/null | true
             sleep 2
         else
-            echo -e "[\033[31m-\033[0m] Network unreachable"
+            echo -e "\033[31m[-]\033[0m Network unreachable"
         fi
     elif [ ${OPTION} = "run" ]; then
         # ================================
@@ -306,19 +307,20 @@ function run_emulation()
         # ================================
         BOOT_KERNEL_PATH=`get_boot_kernel ${ARCH} true`
         BOOT_KERNEL=./binaries/`basename ${BOOT_KERNEL_PATH}`
-        echo -e "[\033[32m+\033[0m] Connect with gdb-multiarch -q ${BOOT_KERNEL} -ex='target remote:1234'"
+        echo -e "\033[32m[+]\033[0m Connect with gdb-multiarch -q ${BOOT_KERNEL} -ex='target remote:1234'"
         ${WORK_DIR}/run_boot.sh
     fi
 
-    echo "[*] cleanup"
+    echo -e "\033[32m[*]\033[0m Cleanup"
     echo "======================================"
+    exit 
 
 }
 
 FIRMWARE=${3}
 
 if [ ${OPTION} = "debug" ] && [ -d ${FIRMWARE} ]; then
-    echo -e "[\033[31m-\033[0m] select firmware file on debug mode!"
+    echo -e "\033[31m[-]\033[0m select firmware file on debug mode!"
     exit 1
 fi
 
