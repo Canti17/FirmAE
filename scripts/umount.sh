@@ -7,6 +7,10 @@ if [ -e ./firmae.config ]; then
     source ./firmae.config
 elif [ -e ../firmae.config ]; then
     source ../firmae.config
+elif [ -e ../../firmae.config ]; then
+    source ../../firmae.config
+elif [ -e FirmAE/firmae.config ]; then
+    source FirmAE/firmae.config
 else
     echo "Error: Could not find 'firmae.config'!"
     exit 1
