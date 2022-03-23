@@ -82,18 +82,30 @@ del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 
 %(START_NET)s
 
+
+GDB=""
 if [ ${IOTAFL} -eq 0 ]; then
     QEMU="./${QEMU}"
+    if (echo ${ARCHEND} | grep -q "mips"); then
+        KERNEL="./vmlinux.${ARCHEND}_3.2.1"
+    else
+        KERNEL="./zImage.armel"
+    fi
     IMAGE=./image.raw
     MEM_PART="-mem-prealloc -mem-path ./mem_file"
     cd scratch/${IID}/
+    if [ $# -eq 1 ]; then
+        if (echo ${1} | grep -q "debug"); then
+            GDB="gdb --args"
+        fi
+    fi
     
 else
     MEM_PART=""
 fi
 
-PATHNEEDED=$(pwd)
-echo "$PATHNEEDED"
+CHECKPATH=$(pwd)
+echo "$CHECKPATH"
 echo ""
 echo "Kernel: ${KERNEL}...."
 echo "Root: ${QEMU_ROOTFS}..."
@@ -103,7 +115,7 @@ echo ""
 sleep 1
 
 echo -n "Starting emulation of firmware... "
-%(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 ${MEM_PART} -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
+%(QEMU_ENV_VARS)s ${GDB} ${QEMU} ${QEMU_BOOT} -m 1024 ${MEM_PART} -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
     %(QEMU_DISK)s -append "root=${QEMU_ROOTFS} console=ttyS0 nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug ignore_loglevel print-fatal-signals=1 FIRMAE_NET=${FIRMAE_NET} FIRMAE_NVRAM=${FIRMAE_NVRAM} FIRMAE_KERNEL=${FIRMAE_KERNEL} FIRMAE_ETC=${FIRMAE_ETC} ${QEMU_DEBUG}" \\
     -serial file:${WORK_DIR}/qemu.final.serial.log \\
     -serial unix:/tmp/qemu.${IID}.S1,server,nowait \\
@@ -373,6 +385,10 @@ sudo ip link set ${TAPDEV_%(I)i} up
 echo "Bringing up TAP device..."
 sudo ip link set ${HOSTNETDEV_%(I)i} up
 sudo ip addr add %(HOSTIP)s/24 dev ${HOSTNETDEV_%(I)i}
+
+#This static route is important in Firmadyne but FirmAE removes it
+#echo "Adding route to %(GUESTIP)s..."
+#sudo ip route add %(GUESTIP)s via %(GUESTIP)s dev ${HOSTNETDEV_%(I)i}
 """
     else:
         template_vlan = """

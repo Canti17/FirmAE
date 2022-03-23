@@ -237,7 +237,9 @@ function run_emulation()
         WEB_RESULT=true
     fi
 
-    echo -e "\n[IID] ${IID}\n \033[33m[MODE]\033[0m ${OPTION}"
+    echo ""
+    echo -e "\033[33m[IID]\033[0m ${IID}"
+    echo -e "\033[33m[MODE]\033[0m ${OPTION}"
     if ($PING_RESULT); then
         echo -e "\033[32m[+]\033[0m Network reachable on ${IP}!"
     fi

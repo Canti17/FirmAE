@@ -1,9 +1,16 @@
-#!/bin/bash
+#!/bin/bash -xv
 
-if [ $# -ne 2 ]; then
-    echo $0: Usage: ./test_emulator.sh [iid] [arch]
+if [ $# -ne 2 ] && [ $# -ne 3 ]; then
+    echo "####-USAGE GUIDE-#####"
+    echo ""
+    echo -e "\033[32m[->]\033[0m Usage ${0}: ./test_emulator.sh [iid] [arch] [debug]"
+    echo ""
+    echo "[arch] = |mipsel|mipseb|armel|"
+    echo "[debug] = |-d|--debug|debug| - Option Available ONLY in the IOT-AFL project (see Github), please don't use it in a normal FirmAE execution"
     exit 1
 fi
+
+
 
 set -e
 set -u
@@ -25,9 +32,20 @@ IID=${1}
 WORK_DIR=`get_scratch ${IID}`
 ARCH=${2}
 
-echo -e "\033[33m[*]\033[0m Starting a test emulation with the new INFO:"
-${WORK_DIR}/run.sh 2>&1 >${WORK_DIR}/emulation.log &
-#${WORK_DIR}/run.sh & #2>&1 >${WORK_DIR}/emulation.log &
+echo -e "\033[33m[*]\033[0m Starting a test emulation with the new firmware configuration:"
+
+if [ $# -eq 2 ]; then
+    ${WORK_DIR}/run.sh 2>&1 >${WORK_DIR}/emulation.log &
+else
+    DEBUG=${3}
+    if [ ${3} == "debug" ] || [ ${3} == "-d" ] || [ ${3} == "--debug" ]; then  
+        ${WORK_DIR}/run.sh debug #2>&1 >${WORK_DIR}/emulation.log &
+        exit 1
+    else
+        echo -e "\033[31m[-]\033[0m Error: You provide three arguments to test_emulation.sh but > ${3} < is not a debug key. Exiting.."
+        exit 1
+    fi
+fi
 
 
 sleep 10
