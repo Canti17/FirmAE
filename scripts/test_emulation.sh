@@ -1,4 +1,4 @@
-#!/bin/bash -xv
+#!/bin/bash
 
 if [ $# -ne 2 ] && [ $# -ne 3 ]; then
     echo "####-USAGE GUIDE-#####"

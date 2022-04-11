@@ -83,25 +83,28 @@ del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 %(START_NET)s
 
 
+#canti17-addition-handling-the-arguments-of-the-qemu-call
 GDB=""
+MEM_PART=""
 if [ ${IOTAFL} -eq 0 ]; then
-    QEMU="./${QEMU}"
+    cd scratch/${IID}/     #Execution will be launched from the WORKDIR
+    QEMU="./${QEMU}"      #This is the modified QEMU-SYSTEM-MODE of Firm-AFL/IOT-AFL
     if (echo ${ARCHEND} | grep -q "mips"); then
-        KERNEL="./vmlinux.${ARCHEND}_3.2.1"
+        #KERNEL="../../binaries/vmlinux.${ARCHEND}.4" #This is the kernel of FirmAE. (Version 4.1.17). It will not work for fuzzing because it is not configured in the procinfo.ini
+        #KERNEL="../../../firmadyne_modify/vmlinux.${ARCHEND}_3.2.1" #This is the kernel used by FirmAFL (Version 3.2.1)
+        KERNEL="vmlinux.${ARCHEND}.4_DECAF"    #This is the our modified kernel of IOT-AFL (Version 4.1.17)
     else
-        KERNEL="./zImage.armel"
+        #KERNEL="../../binaries/zImage.armel" #This is the kernel of FirmAE. (Version 4.1.17). It will not work for fuzzing because it is not configured in the procinfo.ini
+        #KERNEL="../../../firmadyne_modify/vmlinux.${ARCHEND}_3.2.1" #This is the kernel used by FirmAFL (Version 3.2.1)
+        KERNEL="zImage.armel.4_DECAF"       #This is the our modified kernel of IOT-AFL (Version 4.1.17)
     fi
-    IMAGE=./image.raw
-    MEM_PART="-mem-prealloc -mem-path ./mem_file"
-    cd scratch/${IID}/
+    IMAGE=./image.raw                                 #This is the image of the firmware (1G)
+    MEM_PART="-mem-prealloc -mem-path ./mem_file"     #Shared memory
     if [ $# -eq 1 ]; then
         if (echo ${1} | grep -q "debug"); then
             GDB="gdb --args"
         fi
     fi
-    
-else
-    MEM_PART=""
 fi
 
 CHECKPATH=$(pwd)
@@ -600,13 +603,14 @@ def inferNetwork(iid, arch, endianness, init):
 
     print("\033[33m[Info]\033[0m Now we are doing a first emulation to retrieve all possible informations from the firmware")
     print("\033[33m[*]\033[0m Running firmware with ID=%d: terminating after %d secs..." % (iid, TIMEOUT))
-
+    
+    #The first emulation where all informations are discovered 
     cmd = "timeout --preserve-status --signal SIGINT {0} ".format(TIMEOUT)
     cmd += "{0}/run.{1}.sh \"{2}\" \"{3}\" ".format(SCRIPTDIR,
                                                     arch + endianness,
                                                     iid,
                                                     qemuInitValue)
-    cmd += " 2>&1 > /dev/null"   #VEDIAMO QUESTE EMULAZIONI COSA DANNO
+    cmd += " 2>&1 > /dev/null"   
     os.system(cmd)
 
     loopFile = mountImage(targetDir)
@@ -840,7 +844,7 @@ def main():
         print("\033[33m[*]\033[0m Processing Firmware with ID=%i" % iid)
     #pdb.set_trace()
     resultProcess = process(iid, arch, endianness, makeQemuCmd, outfile)
-    print("Result Processing: ", resultProcess)
+    print("\033[32m[=]\033[0m Result Processing: ", resultProcess)
 
 if __name__ == "__main__":
     main()

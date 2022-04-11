@@ -226,7 +226,7 @@ function run_emulation()
         time_network="$(bc <<<"$t_end-$t_start")"
         echo $time_network > ${WORK_DIR}/time_network
     else
-        echo "\033[32m[+]\033[0m ${INFILE} already succeed emulation!!!\n"
+        echo -e "\033[32m[+]\033[0m ${INFILE} already succeed emulation!!!\n"
     fi
 
     if (egrep -sqi "true" ${WORK_DIR}/ping); then
