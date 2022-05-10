@@ -49,9 +49,9 @@ def get_brand(infile, psql_ip):
         if brand:
             return brand[0]
         else:
-            return ""
+            return "NotFound"
     else:
-        return ""
+        return "NotFound"
 
 def check_connection(psql_ip):
     try:

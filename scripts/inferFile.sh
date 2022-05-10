@@ -54,6 +54,7 @@ ${BUSYBOX} echo '/firmadyne/preInit.sh' >> /firmadyne/init
 
 
 #canti17-adding-others-webServices-from-the-FIRMAE-ones
+#The start to some webserver is important (in the first example /etc/init.d/uhttpd start it is fundamental) because then the script run_service.sh start the web server)
 if (${FIRMAE_ETC}); then
     if [ -e /etc/init.d/uhttpd ]; then
         echo -n "/etc/init.d/uhttpd start" > /firmadyne/service
@@ -85,7 +86,7 @@ if (${FIRMAE_ETC}); then
     elif [ -e /usr/bin/lighttpd ]; then # for DLink Firmwares
         echo -n "/usr/bin/lighttpd -f /etc/lighttpd/lighttpd.conf" > /firmadyne/service
         echo -n "lighttpd" > /firmadyne/service_name
-    elif [ -e /sbin/lighttpd ]; then # for DLink Firmwares
+    elif [ -e /sbin/lighttpd ]; then # for DLink and Netgear Firmwares
         echo -n "/sbin/lighttpd -f /etc/lighttpd.conf" > /firmadyne/service
         echo -n "lighttpd" > /firmadyne/service_name
     elif [ -e /sbin/jjhttpd ]; then # for DLink Firmwares

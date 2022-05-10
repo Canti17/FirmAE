@@ -121,6 +121,11 @@ if [ -e ${IMAGE_DIR}/firmadyne/service ]; then
   cp ${IMAGE_DIR}/firmadyne/service ${WORK_DIR}
 fi
 
+#canti-17-addition-for-later-purpose
+if [ -e ${IMAGE_DIR}/firmadyne/service_name ]; then
+  cp ${IMAGE_DIR}/firmadyne/service_name ${WORK_DIR}
+fi
+
 #canti17-fix-for-some-OPENWRT-firmwares
 FILE_INIT=${IMAGE_DIR}/etc/inittab
 STR_INIT=/firmadyne/preInit.sh

@@ -562,11 +562,16 @@ def inferNetwork(iid, arch, endianness, init):
         out.write("None")
 
     qemuInitValue = 'rdinit=/firmadyne/preInit.sh'
+    if os.path.exists(targetDir + '/service_name'):
+        webService_name = open(targetDir + '/service_name').read().strip()
+    else:
+        webService_name = None
     if os.path.exists(targetDir + '/service'):
         webService = open(targetDir + '/service').read().strip()
     else:
         webService = None
-    print("\033[33m[*]\033[0m Web service: %s" % webService)
+    print("\033[33m[*]\033[0m Web service: %s" % webService_name)
+    print("\033[33m[*]\033[0m Web service Path: %s" % webService)
     print("")
     #pdb.set_trace()
     targetFile = ''

@@ -172,7 +172,7 @@ function run_emulation()
     time_arch="$(bc <<<"$t_end-$t_start")"
     echo $time_arch > ${WORK_DIR}/time_arch
 
-    if (! egrep -sqi "true" ${WORK_DIR}/web); then
+    if (! egrep -sqi "true" ${WORK_DIR}/result_web); then
         # ================================
         # make qemu image
         # ================================
@@ -229,11 +229,11 @@ function run_emulation()
         echo -e "\033[32m[+]\033[0m ${INFILE} already succeed emulation!!!\n"
     fi
 
-    if (egrep -sqi "true" ${WORK_DIR}/ping); then
+    if (egrep -sqi "true" ${WORK_DIR}/result_ping); then
         PING_RESULT=true
         IP=`cat ${WORK_DIR}/ip`
     fi
-    if (egrep -sqi "true" ${WORK_DIR}/web); then
+    if (egrep -sqi "true" ${WORK_DIR}/result_web); then
         WEB_RESULT=true
     fi
 
