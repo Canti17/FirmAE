@@ -770,8 +770,8 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
 
             os.system('./scripts/test_emulation.sh {} {}'.format(iid, arch + endianness))
 
-            if (os.path.exists(SCRATCHDIR + '/' + str(iid) + '/web') and
-                open(SCRATCHDIR + '/' + str(iid) + '/web').read().strip() == 'true'):
+            if (os.path.exists(SCRATCHDIR + '/' + str(iid) + '/result_web') and
+                open(SCRATCHDIR + '/' + str(iid) + '/result_web').read().strip() == 'true'):
                 success = True
                 break
 
@@ -853,3 +853,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
