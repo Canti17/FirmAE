@@ -119,6 +119,9 @@ Google spreadsheet -
 Google drive -
 [download](https://drive.google.com/file/d/1hdm75NVKBvs-eVH9rKb5xfgryNSnsg_8/view?usp=sharing)
 
+Other -
+[download](https://drive.google.com/drive/folders/1VTbMW2QOZv53JQmsL5ToLMzgoEfg63eE?usp=sharing)
+
 # CVEs
 
 - ASUS: [CVE-2019-20082](https://github.com/pr0v3rbs/CVE/tree/master/CVE-2019-20082)
