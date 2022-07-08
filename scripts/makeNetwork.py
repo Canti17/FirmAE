@@ -91,11 +91,11 @@ if [ ${IOTAFL} -eq 0 ]; then
     QEMU="./${QEMU}"      #This is the modified QEMU-SYSTEM-MODE of Firm-AFL/IOT-AFL
     if (echo ${ARCHEND} | grep -q "mips"); then
         #KERNEL="../../binaries/vmlinux.${ARCHEND}.4" #This is the kernel of FirmAE. (Version 4.1.17). It will not work for fuzzing because it is not configured in the procinfo.ini
-        #KERNEL="../../../firmadyne_modify/vmlinux.${ARCHEND}_3.2.1" #This is the kernel used by FirmAFL (Version 3.2.1)
+        #KERNEL="../../../FirmAFL_config/vmlinux.${ARCHEND}_3.2.1" #This is the kernel used by FirmAFL (Version 3.2.1)
         KERNEL="vmlinux.${ARCHEND}.4_DECAF"    #This is the our modified kernel of IOT-AFL (Version 4.1.17)
     else
         #KERNEL="../../binaries/zImage.armel" #This is the kernel of FirmAE. (Version 4.1.17). It will not work for fuzzing because it is not configured in the procinfo.ini
-        #KERNEL="../../../firmadyne_modify/vmlinux.${ARCHEND}_3.2.1" #This is the kernel used by FirmAFL (Version 3.2.1)
+        #KERNEL="../../../FirmAFL_config/vmlinux.${ARCHEND}_3.2.1" #This is the kernel used by FirmAFL (Version 3.2.1)
         KERNEL="zImage.armel.4_DECAF"       #This is the our modified kernel of IOT-AFL (Version 4.1.17)
     fi
     IMAGE=./image.raw                                 #This is the image of the firmware (1G)
@@ -118,7 +118,7 @@ echo ""
 sleep 1
 
 echo -n "Starting emulation of firmware... "
-%(QEMU_ENV_VARS)s ${GDB} ${QEMU} ${QEMU_BOOT} -m 1024 ${MEM_PART} -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
+%(QEMU_ENV_VARS)s ${GDB} ${QEMU} ${QEMU_BOOT} -m 256 ${MEM_PART} -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
     %(QEMU_DISK)s -append "root=${QEMU_ROOTFS} console=ttyS0 nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug ignore_loglevel print-fatal-signals=1 FIRMAE_NET=${FIRMAE_NET} FIRMAE_NVRAM=${FIRMAE_NVRAM} FIRMAE_KERNEL=${FIRMAE_KERNEL} FIRMAE_ETC=${FIRMAE_ETC} ${QEMU_DEBUG}" \\
     -serial file:${WORK_DIR}/qemu.final.serial.log \\
     -serial unix:/tmp/qemu.${IID}.S1,server,nowait \\
@@ -126,6 +126,8 @@ echo -n "Starting emulation of firmware... "
     -display none \\
     %(QEMU_NETWORK)s
 %(STOP_NET)s
+#OLD NEWTWORK
+# -net nic,vlan=0 -net socket,vlan=0,listen=:2000 -net nic,vlan=1 -net socket,vlan=1,listen=:2001 -net nic,vlan=0 -net tap,vlan=0,id=net0,ifname=${TAPDEV_0},script=no -net nic,vlan=3 -net socket,vlan=3,listen=:2003 \
 
 echo "Done!"
 """
@@ -620,7 +622,7 @@ def inferNetwork(iid, arch, endianness, init):
 
     loopFile = mountImage(targetDir)
     if not os.path.exists(targetDir + '/image/firmadyne/nvram_files'):
-        print("\033[33m[*]\033[0m Creating NVRAM default file!\n")
+        print("\033[33m[*]\033[0m Creating NVRAM default file!")
         os.system("{}/inferDefault.py {}".format(SCRIPTDIR, iid))
     umountImage(targetDir, loopFile)
 

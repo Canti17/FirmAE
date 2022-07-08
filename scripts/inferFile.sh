@@ -55,6 +55,7 @@ ${BUSYBOX} echo '/firmadyne/preInit.sh' >> /firmadyne/init
 
 #canti17-adding-others-webServices-from-the-FIRMAE-ones
 #The start to some webserver is important (in the first example /etc/init.d/uhttpd start it is fundamental) because then the script run_service.sh start the web server)
+#If the firmware has one of this but it not activates, try to comment the appropriate lines below lines and run again.
 if (${FIRMAE_ETC}); then
     if [ -e /etc/init.d/uhttpd ]; then
         echo -n "/etc/init.d/uhttpd start" > /firmadyne/service

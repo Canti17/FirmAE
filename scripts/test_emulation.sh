@@ -32,6 +32,7 @@ IID=${1}
 WORK_DIR=`get_scratch ${IID}`
 ARCH=${2}
 
+echo ""
 echo -e "\033[33m[*]\033[0m Starting a test emulation with the new firmware configuration:"
 
 if [ $# -eq 2 ]; then

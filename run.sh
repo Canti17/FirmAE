@@ -97,6 +97,7 @@ function run_emulation()
     # ================================
     # extract filesystem from firmware
     # ================================
+    echo -e "\033[33m[*]\033[0m Extracting Firmware..."
     t_start="$(date -u +%s.%N)"
     timeout --preserve-status --signal SIGINT 300 \
         ./sources/extractor/extractor.py -b $BRAND -sql $PSQL_IP -np -nk $INFILE images \
@@ -104,10 +105,10 @@ function run_emulation()
 
     IID=`./scripts/util.py get_iid $INFILE $PSQL_IP`
     if [ ! "${IID}" ]; then
-        echo -e "\033[31m[-]\033[0m extractor.py failed!"
+        echo -e "\033[31m[-]\033[0m extractor.py failed! Probably a Postgres database problem! Otherwise a bug in extractor.py"
         return
     fi
-
+    
     # ================================
     # extract kernel from firmware
     # ================================
@@ -147,6 +148,7 @@ function run_emulation()
     # ================================
     # check architecture
     # ================================
+    echo -e "\033[33m[*]\033[0m Get Architecture..."
     t_start="$(date -u +%s.%N)"
     ARCH=`./scripts/getArch.py ./images/$IID.tar.gz $PSQL_IP`
     echo "${ARCH}" > "${WORK_DIR}/architecture"
@@ -176,6 +178,8 @@ function run_emulation()
         # ================================
         # make qemu image
         # ================================
+        echo -e "\033[33m[*]\033[0m Making QEMU Image..."
+        echo -e "\033[32m[+]\033[0m Log in FirmAE/scratch/$IID/makeImage.log"
         t_start="$(date -u +%s.%N)"
         ./scripts/tar2db.py -i $IID -f ./images/$IID.tar.gz -h $PSQL_IP \
             2>&1 > ${WORK_DIR}/tar2db.log
@@ -189,12 +193,13 @@ function run_emulation()
         t_end="$(date -u +%s.%N)"
         time_image="$(bc <<<"$t_end-$t_start")"
         echo $time_image > ${WORK_DIR}/time_image
-
+        echo -e "\033[32m[+]\033[0m Image Created!!"
 
         #canti17-change-fuzzing-project
         # ==============================================
         # If it is a IOT-AFL execution - Setup Fuzzing
         # ==============================================
+        echo -e "\033[33m[*]\033[0m Setup Default Configuration.."
         t_start="$(date -u +%s.%N)"
         directory_you_want_to_check="IOT-AFL"
         PATHTESTING=$(pwd)
@@ -205,6 +210,7 @@ function run_emulation()
         fi
         t_end="$(date -u +%s.%N)"
         time_image="$(bc <<<"$t_end-$t_start")"
+        echo -e "\033[32m[+]\033[0m Done!"
 
 
         # ================================
@@ -212,12 +218,12 @@ function run_emulation()
         # ================================
         t_start="$(date -u +%s.%N)"
         echo ""
-        echo -e "\033[33m[*]\033[0m Infer network start!!!"
         # TIMEOUT is set in "firmae.config". This TIMEOUT is used for initial
         # log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
           ./scripts/makeNetwork.py -i $IID -d -q -o -a ${ARCH} #\
          # &> ${WORK_DIR}/makeNetwork.log
+        echo -e "\033[32m[+]\033[0m Done!"
         ln -s ./run.sh ${WORK_DIR}/run_debug.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_analyze.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_boot.sh | true
